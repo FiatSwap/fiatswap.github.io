@@ -54,11 +54,11 @@
 
 	<div class="modal bottom-sheet" id="sellModal">
 		<div class="modal-content">
-			<h4>Post New Offer</h4>
+			<h4>New Offer</h4>
 			<form ng-submit="newOffer()">
 				<div class="row">
 					<div class="col s6">
-						<select name="" id="" ng-model="state.selectedCr">
+						<select ng-model="state.selectedCr">
 							<option value="" disabled selected>Select Token</option>
 							<option value="tron" data-icon="trx.png">Tron (TRX)</option>
 							<option value="tether" data-icon="usdt.png">Tether (USDT)</option>
@@ -66,7 +66,7 @@
 					</div>
 
 					<div class="col s6">
-						<select name="" id="" ng-model="state.selectedMode">
+						<select ng-model="state.selectedMode">
 							<option value="" disabled selected>Payment Mode</option>
 							<option value="0" data-icon="bhim.png">UPI (INR)</option>
 							<option value="1" data-icon="paytm.png">PayTM (INR)</option>
@@ -76,20 +76,30 @@
 					</div>
 				</div>
 
-				<div>
-					<input type="text" id="data_amt" placeholder="Amount of Tokens" />
+				<div class="input-field">
+					<input ng-model="state.sellerUser" type="text" placeholder="{{placeHolders.user[state.selectedMode]}}" />
 				</div>
 
 				<div class="input-field">
-					<input type="text" id="data_amt" placeholder="Selling Price" />
+					<input ng-model="state.sellerDisplay" type="text" placeholder="Name on Account" />
+				</div>
+
+				<div class="input-field">
+					<input ng-model="state.tokenValue" type="text" placeholder="Amount of Tokens" />
+				</div>
+
+				<div class="input-field">
+					<input ng-model="state.sellingPrice" type="text" placeholder="Selling Price" />
 					<span class="helper-text">Market Price: {{state.selectedMode == '2' || state.selectedMode == '3' ? '$' : '₹'}}{{prices[state.selectedCr][state.selectedMode == '2' || state.selectedMode == '3' ? 'usd' : 'inr']}}</span>
+				</div>
+
+				<div>
+					<button class="btn right red darken-1" type="submit">Post</button>
 				</div>
 			</form>
 		</div>
 
-		<div class="modal-footer">
-
-		</div>
+		<div class="modal-footer"></div>
 	</div>
 
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
