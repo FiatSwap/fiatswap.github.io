@@ -1,0 +1,7 @@
+@media only screen and (max-width: 992px) {
+	nav .brand-logo {
+		left: 20px;
+		-webkit-transform: translateX(0%);
+		transform: translateX(0%);
+	}
+}

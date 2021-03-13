@@ -5,16 +5,29 @@
 	<meta charset="UTF-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>FiatSwap</title>
+	<title>Fiat Swap</title>
 
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+	<link rel="stylesheet" href="style.css">
+	
 	<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.9/angular.min.js"></script>
 </head>
 
-<body>
-	<div ng-app="myApp" ng-controller="myCtrl">
-		{{favColor}}
-	</div>
+<body ng-app="myApp" ng-controller="myCtrl">
+	<header>
+		<nav class="blue-grey darken-1">
+			<div class="nav-wrapper">
+				<a href="javascript:void(0)" class="brand-logo">Fiat Swap</a>
+				<ul class="right">
+					<li class="yellow"><a class="black-text" href="javascript:void(0)" onclick="connectWallet()">{{account.address == null ? 'Connect Wallet' : account.address.short}}</a></li>
+				</ul>
+			</div>
+		</nav>
+	</header>
+
+	<main></main>
+	
+	<footer></footer>
 
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
 	<script src="script.js"></script>
