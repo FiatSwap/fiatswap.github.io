@@ -56,12 +56,33 @@
 		<div class="modal-content">
 			<h4>Post New Offer</h4>
 			<form ng-submit="newOffer()">
+				<div class="row">
+					<div class="col s6">
+						<select name="" id="" ng-model="state.selectedCr">
+							<option value="" disabled selected>Select Token</option>
+							<option value="tron" data-icon="trx.png">Tron (TRX)</option>
+							<option value="tether" data-icon="usdt.png">Tether (USDT)</option>
+						</select>
+					</div>
+
+					<div class="col s6">
+						<select name="" id="" ng-model="state.selectedMode">
+							<option value="" disabled selected>Payment Mode</option>
+							<option value="0" data-icon="bhim.png">UPI (INR)</option>
+							<option value="1" data-icon="paytm.png">PayTM (INR)</option>
+							<option value="2" data-icon="paypal.png">Paypal (USD)</option>
+							<option value="3" data-icon="venmo.svg">Venmo (USD)</option>
+						</select>
+					</div>
+				</div>
+
 				<div>
 					<input type="text" id="data_amt" placeholder="Amount of Tokens" />
 				</div>
 
-				<div>
+				<div class="input-field">
 					<input type="text" id="data_amt" placeholder="Selling Price" />
+					<span class="helper-text">Market Price: {{state.selectedMode == '2' || state.selectedMode == '3' ? '$' : '₹'}}{{prices[state.selectedCr][state.selectedMode == '2' || state.selectedMode == '3' ? 'usd' : 'inr']}}</span>
 				</div>
 			</form>
 		</div>

@@ -3,14 +3,22 @@ const config = {
 	tronGridApi: 'https://api.shasta.trongrid.io'
 };
 
+let scope;
 const app = angular.module('myApp', []);
 app.controller('myCtrl', function($scope, $window, $interval) {
 	$scope.state = {
-		loading: true
+		loading: true,
+		selectedMode: '0',
+		selectedCr: 'tron'
 	};
 	$scope.account = {
 		address: null
 	};
+	$scope.prices = {
+		tron: {
+			inr: '-'
+		}
+	}
 	
 	
 	// on UI loaded
@@ -34,13 +42,14 @@ app.controller('myCtrl', function($scope, $window, $interval) {
 			}, 1000);
 		} else {
 			alert('Install TronLink to continue');
-			return;
-		}
-
-		$scope.newOffer = function() {
-			alert('Post Offer');
 		}
 	}
+
+	$scope.newOffer = function() {
+		alert('Post Offer');
+	}
+
+	scope = $scope;
 });
 
 // format address
@@ -53,4 +62,21 @@ function formatAddress(address) {
 $(document).ready(function() {
 	$('.tabs').tabs({ swipeable: true });
 	$('.modal').modal();
+	$('select').formSelect();
+
+	loadPrices();
 });
+
+// load prices
+function loadPrices() {
+	$.get('https://api.coingecko.com/api/v3/simple/price?vs_currencies=inr,usd&ids=tether,tron', function(data, status) {
+		if (status == 'success') {
+			try {
+				scope.prices = data;
+				scope.$apply();
+			} catch (e) {}
+		}
+
+		setTimeout(loadPrices, 60000);
+	});
+}

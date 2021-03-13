@@ -26,3 +26,7 @@ main {
 .modal-content>form>div {
 	margin: 30px 0 10px;
 }
+
+.modal-content>form .row>.col {
+	padding: 0 .75rem 0 0;
+}
