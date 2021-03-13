@@ -34,6 +34,11 @@ app.controller('myCtrl', function($scope, $window, $interval) {
 			}, 1000);
 		} else {
 			alert('Install TronLink to continue');
+			return;
+		}
+
+		$scope.newOffer = function() {
+			alert('Post Offer');
 		}
 	}
 });
@@ -44,3 +49,8 @@ function formatAddress(address) {
 	const end = address.substr(address.length - 4);
 	return `${start}...${end}`;
 }
+
+$(document).ready(function() {
+	$('.tabs').tabs({ swipeable: true });
+	$('.modal').modal();
+});
