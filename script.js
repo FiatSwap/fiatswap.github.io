@@ -25,8 +25,12 @@ app.controller('myCtrl', function($scope, $window, $interval) {
 	};
 	$scope.contracts = {
 		swap: {
-			address: 'TBZkZbAQ8vrSrJtcuaH4LTjUSvkApM4y2x',
-			abi: [{"stateMutability":"Nonpayable","type":"Constructor"},{"outputs":[{"type":"address"}],"name":"owner","stateMutability":"View","type":"Function"},{"outputs":[{"type":"uint256"}],"inputs":[{"type":"address"},{"type":"uint256"}],"name":"sellers","stateMutability":"View","type":"Function"},{"inputs":[{"name":"mode","type":"uint256"},{"name":"_price","type":"uint256"},{"name":"_display","type":"string"},{"name":"_username","type":"string"}],"name":"postOffer","stateMutability":"Payable","type":"Function"},{"inputs":[{"name":"index","type":"uint256"}],"name":"deleteOffer","stateMutability":"Nonpayable","type":"Function"},{"inputs":[{"name":"buyer","type":"address"},{"name":"amount","type":"uint256"}],"name":"toBuyer","stateMutability":"Nonpayable","type":"Function"}]
+			address: 'TGivNisr6jd4dRfWAwiypAGuXiweHL7bRD',
+			abi: [{"stateMutability":"Nonpayable","type":"Constructor"},{"outputs":[{"type":"address"}],"name":"ERC20Interface","stateMutability":"View","type":"Function"},{"outputs":[{"type":"uint256"}],"inputs":[{"type":"address"},{"type":"uint256"}],"name":"lockedAmts","stateMutability":"View","type":"Function"},{"outputs":[{"type":"address"}],"name":"owner","stateMutability":"View","type":"Function"},{"outputs":[{"type":"uint256"}],"inputs":[{"type":"address"},{"type":"uint256"}],"name":"sellers","stateMutability":"View","type":"Function"},{"inputs":[{"name":"mode","type":"uint256"},{"name":"_price","type":"uint256"},{"name":"_display","type":"string"},{"name":"_username","type":"string"}],"name":"postOffer","stateMutability":"Payable","type":"Function"},{"inputs":[{"name":"amt","type":"uint256"},{"name":"mode","type":"uint256"},{"name":"_price","type":"uint256"},{"name":"_display","type":"string"},{"name":"_username","type":"string"}],"name":"postTokenOffer","stateMutability":"Nonpayable","type":"Function"},{"inputs":[{"name":"index","type":"uint256"}],"name":"deleteOffer","stateMutability":"Nonpayable","type":"Function"},{"inputs":[{"name":"buyer","type":"address"},{"name":"amount","type":"uint256"}],"name":"toBuyer","stateMutability":"Nonpayable","type":"Function"}]
+		},
+		usdt: {
+			address: 'TXpKNWHzZj2LRcRFJKWjeyDa4tLdENmNgG',
+			abi: [{"outputs":[{"type":"string"}],"constant":true,"name":"name","stateMutability":"View","type":"Function"},{"outputs":[{"type":"bool"}],"inputs":[{"name":"spender","type":"address"},{"name":"value","type":"uint256"}],"name":"approve","stateMutability":"Nonpayable","type":"Function"},{"outputs":[{"type":"uint256"}],"constant":true,"name":"totalSupply","stateMutability":"View","type":"Function"},{"outputs":[{"type":"bool"}],"inputs":[{"name":"from","type":"address"},{"name":"to","type":"address"},{"name":"value","type":"uint256"}],"name":"transferFrom","stateMutability":"Nonpayable","type":"Function"},{"outputs":[{"type":"uint8"}],"constant":true,"name":"decimals","stateMutability":"View","type":"Function"},{"outputs":[{"type":"bool"}],"inputs":[{"name":"spender","type":"address"},{"name":"addedValue","type":"uint256"}],"name":"increaseAllowance","stateMutability":"Nonpayable","type":"Function"},{"outputs":[{"type":"bool"}],"inputs":[{"name":"to","type":"address"},{"name":"value","type":"uint256"}],"name":"mint","stateMutability":"Nonpayable","type":"Function"},{"outputs":[{"type":"uint256"}],"constant":true,"inputs":[{"name":"owner","type":"address"}],"name":"balanceOf","stateMutability":"View","type":"Function"},{"outputs":[{"type":"string"}],"constant":true,"name":"symbol","stateMutability":"View","type":"Function"},{"inputs":[{"name":"account","type":"address"}],"name":"addMinter","stateMutability":"Nonpayable","type":"Function"},{"name":"renounceMinter","stateMutability":"Nonpayable","type":"Function"},{"outputs":[{"type":"bool"}],"inputs":[{"name":"spender","type":"address"},{"name":"subtractedValue","type":"uint256"}],"name":"decreaseAllowance","stateMutability":"Nonpayable","type":"Function"},{"outputs":[{"type":"bool"}],"inputs":[{"name":"to","type":"address"},{"name":"value","type":"uint256"}],"name":"transfer","stateMutability":"Nonpayable","type":"Function"},{"outputs":[{"type":"bool"}],"constant":true,"inputs":[{"name":"account","type":"address"}],"name":"isMinter","stateMutability":"View","type":"Function"},{"outputs":[{"type":"uint256"}],"constant":true,"inputs":[{"name":"owner","type":"address"},{"name":"spender","type":"address"}],"name":"allowance","stateMutability":"View","type":"Function"},{"stateMutability":"Nonpayable","type":"Constructor"},{"inputs":[{"indexed":true,"name":"account","type":"address"}],"name":"MinterAdded","type":"Event"},{"inputs":[{"indexed":true,"name":"account","type":"address"}],"name":"MinterRemoved","type":"Event"},{"inputs":[{"indexed":true,"name":"from","type":"address"},{"indexed":true,"name":"to","type":"address"},{"name":"value","type":"uint256"}],"name":"Transfer","type":"Event"},{"inputs":[{"indexed":true,"name":"owner","type":"address"},{"indexed":true,"name":"spender","type":"address"},{"name":"value","type":"uint256"}],"name":"Approval","type":"Event"}]
 		}
 	};
 	$scope.placeHolders = {
@@ -41,6 +45,8 @@ app.controller('myCtrl', function($scope, $window, $interval) {
 	// on UI loaded
 	$window.onload = function(e) {
 		if ($window.tronWeb) {
+			// console.log($window.tronWeb.address.toHex('TXpKNWHzZj2LRcRFJKWjeyDa4tLdENmNgG'));
+
 			let tries = 0, totalTries = 15;
 			const interval = $interval(function() {
 				if ($window.tronWeb.defaultAddress.base58 != false) {
@@ -66,6 +72,7 @@ app.controller('myCtrl', function($scope, $window, $interval) {
 	// load blockchain data
 	$scope.loadBcData = async function() {
 		$scope.contracts.swap.instance = await window.tronWeb.contract($scope.contracts.swap.abi, $scope.contracts.swap.address);
+		$scope.contracts.usdt.instance = await window.tronWeb.contract($scope.contracts.usdt.abi, $scope.contracts.usdt.address);
 	}
 
 	$scope.newOffer = async function() {
@@ -103,9 +110,46 @@ app.controller('myCtrl', function($scope, $window, $interval) {
 		
 		if (isNaN($scope.state.sellingPrice) || $scope.state.sellingPrice < 0.0001) return toast('Please enter a valid selling price');
 
-		const res = await $scope.contracts.swap.instance.postOffer($scope.state.selectedMode, $scope.state.sellingPrice, $scope.state.sellerDisplay, $scope.state.sellerUser).send({
-			callValue: 1000000 * $scope.state.tokenValue
-		});
+		if ($scope.state.selectedCr == 'tron') {
+			const res = await $scope.contracts.swap.instance.postOffer($scope.state.selectedMode, $scope.state.sellingPrice, $scope.state.sellerDisplay, $scope.state.sellerUser).send({
+				callValue: 1000000 * $scope.state.tokenValue,
+				shouldPollResponse: true
+			});
+
+				console.log(res);
+				if (res == true) {
+				toast('Tron Offer Created Successfully');
+			} else {
+				toast('Operation Failed');
+			}
+		} else {
+			const amt = 100 * $scope.state.tokenValue;
+			const allowance = await $scope.contracts.usdt.instance.allowance($scope.account.address.long, $scope.contracts.swap.address).call();
+
+			let success = false;
+			if (allowance >= amt) {
+				success = true;
+			} else {
+				success = await $scope.contracts.usdt.instance.approve($scope.contracts.swap.address, amt - allowance).send({
+					callValue: 0,
+					shouldPollResponse: true
+				});
+			}
+
+			if (success) {
+				const res = await $scope.contracts.swap.instance.postTokenOffer(amt, $scope.state.selectedMode, $scope.state.sellingPrice, $scope.state.sellerDisplay, $scope.state.sellerUser).send({
+					callValue: 0,
+					shouldPollResponse: true
+				});
+
+				console.log(res);
+				if (res == true) {
+					toast('Token Offer Created Successfully');
+				} else {
+					toast('Operation Failed');
+				}
+			}
+		}
 	}
 
 	scope = $scope;
