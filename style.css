@@ -1,3 +1,14 @@
+body {
+	display: flex;
+	min-height: 100vh;
+	flex-direction: column;
+}
+
+main {
+	flex: 1 0 auto;
+	padding: 12px;
+}
+
 @media only screen and (max-width: 992px) {
 	nav .brand-logo {
 		-webkit-transform: translateX(0%);
@@ -14,13 +25,34 @@ main {
 }
 
 .offer-card {
+	overflow: hidden;
+}
+
+.offer-card.row {
+	margin-left: 0 !important;
+	margin-right: 0 !important;
+}
+.offer-card>div {
+	font-size: 20px;
+	padding: 45px !important;
 	text-align: center;
-	padding: 20px;
-	cursor: pointer;
+	overflow: hidden;
+}
+.offer-card>div>img {
+	height: 60px;
 }
 
 .offer-card.new {
 	font-size: 30px;
+	cursor: pointer;
+	text-align: center;
+	padding: 20px;
+}
+
+.offer-card .options {
+	position: absolute;
+	right: 0;
+	padding: 0 !important;
 }
 
 .modal-content>form>div {

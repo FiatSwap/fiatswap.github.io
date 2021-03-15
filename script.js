@@ -25,8 +25,8 @@ app.controller('myCtrl', function($scope, $window, $interval) {
 	};
 	$scope.contracts = {
 		swap: {
-			address: 'TGivNisr6jd4dRfWAwiypAGuXiweHL7bRD',
-			abi: [{"stateMutability":"Nonpayable","type":"Constructor"},{"outputs":[{"type":"address"}],"name":"ERC20Interface","stateMutability":"View","type":"Function"},{"outputs":[{"type":"uint256"}],"inputs":[{"type":"address"},{"type":"uint256"}],"name":"lockedAmts","stateMutability":"View","type":"Function"},{"outputs":[{"type":"address"}],"name":"owner","stateMutability":"View","type":"Function"},{"outputs":[{"type":"uint256"}],"inputs":[{"type":"address"},{"type":"uint256"}],"name":"sellers","stateMutability":"View","type":"Function"},{"inputs":[{"name":"mode","type":"uint256"},{"name":"_price","type":"uint256"},{"name":"_display","type":"string"},{"name":"_username","type":"string"}],"name":"postOffer","stateMutability":"Payable","type":"Function"},{"inputs":[{"name":"amt","type":"uint256"},{"name":"mode","type":"uint256"},{"name":"_price","type":"uint256"},{"name":"_display","type":"string"},{"name":"_username","type":"string"}],"name":"postTokenOffer","stateMutability":"Nonpayable","type":"Function"},{"inputs":[{"name":"index","type":"uint256"}],"name":"deleteOffer","stateMutability":"Nonpayable","type":"Function"},{"inputs":[{"name":"buyer","type":"address"},{"name":"amount","type":"uint256"}],"name":"toBuyer","stateMutability":"Nonpayable","type":"Function"}]
+			address: 'TCFXnW4913MbvsAcYuA3LDvEjJWtTrTrqx',
+			abi: [{"stateMutability":"Nonpayable","type":"Constructor"},{"outputs":[{"type":"address"}],"name":"ERC20Interface","stateMutability":"View","type":"Function"},{"outputs":[{"type":"uint256"}],"inputs":[{"type":"address"},{"type":"uint256"}],"name":"lockedAmts","stateMutability":"View","type":"Function"},{"outputs":[{"name":"curr","type":"uint256"},{"name":"mode","type":"uint256"},{"name":"price","type":"uint256"},{"name":"locked","type":"uint256"},{"name":"display","type":"string"},{"name":"username","type":"string"}],"inputs":[{"type":"uint256"}],"name":"offers","stateMutability":"View","type":"Function"},{"outputs":[{"type":"address"}],"name":"owner","stateMutability":"View","type":"Function"},{"outputs":[{"type":"uint256"}],"inputs":[{"type":"address"},{"type":"uint256"}],"name":"sellers","stateMutability":"View","type":"Function"},{"inputs":[{"name":"mode","type":"uint256"},{"name":"_price","type":"uint256"},{"name":"_display","type":"string"},{"name":"_username","type":"string"}],"name":"postOffer","stateMutability":"Payable","type":"Function"},{"inputs":[{"name":"amt","type":"uint256"},{"name":"mode","type":"uint256"},{"name":"_price","type":"uint256"},{"name":"_display","type":"string"},{"name":"_username","type":"string"}],"name":"postTokenOffer","stateMutability":"Nonpayable","type":"Function"},{"inputs":[{"name":"index","type":"uint256"},{"name":"userIndex","type":"uint256"}],"name":"deleteOffer","stateMutability":"Nonpayable","type":"Function"},{"inputs":[{"name":"buyer","type":"address"},{"name":"amount","type":"uint256"}],"name":"toBuyer","stateMutability":"Nonpayable","type":"Function"}]
 		},
 		usdt: {
 			address: 'TXpKNWHzZj2LRcRFJKWjeyDa4tLdENmNgG',
@@ -40,6 +40,7 @@ app.controller('myCtrl', function($scope, $window, $interval) {
 		userBlank: ['UPI ID cannot be blank', 'Phone Number cannot be blank', 'Paypal Email cannot be blank', 'Venmo Username cannot be blank'],
 		userInvalid: ['Please enter a valid UPI ID', 'Please enter a valid Phone Number', 'Please enter a valid Email', 'Please enter a valid Venmo Username']
 	}
+	$scope.modeLogos = ['bhim_big.png', 'paytm_big.png', 'paypal_big.png', 'venmo.svg'];
 	
 	
 	// on UI loaded
@@ -73,6 +74,39 @@ app.controller('myCtrl', function($scope, $window, $interval) {
 	$scope.loadBcData = async function() {
 		$scope.contracts.swap.instance = await window.tronWeb.contract($scope.contracts.swap.abi, $scope.contracts.swap.address);
 		$scope.contracts.usdt.instance = await window.tronWeb.contract($scope.contracts.usdt.abi, $scope.contracts.usdt.address);
+
+		// load posted offers
+		$scope.myOffers = [];
+		let fetchedAll = false;
+		let fetchIndex = 0;
+		while (!fetchedAll) {
+			try {
+				const resIndex = await $scope.contracts.swap.instance.sellers($scope.account.address.long, fetchIndex).call();
+				const offerIndex = Number(resIndex) - 1;
+				if (offerIndex == -1) {
+					fetchIndex++;
+					continue;
+				}
+
+				const resOffer = await $scope.contracts.swap.instance.offers(offerIndex).call();
+				resOffer.quantity = resOffer.locked / (resOffer.curr == 0 ? 1000000 : 100);
+				resOffer.logo = $scope.modeLogos[resOffer.mode];
+				resOffer.fiat = (resOffer.mode <= 1 ? '₹' : '$') + resOffer.price;
+				resOffer.myIndex = fetchIndex;
+				resOffer.index = offerIndex;
+
+				$scope.myOffers.push(resOffer);
+				fetchIndex++;
+			} catch(e) {
+				// console.log(fetchIndex);
+				// console.error(e);
+				fetchedAll = true;
+				$scope.$apply();
+				
+				$('.tooltipped').tooltip();
+				console.log($scope.myOffers);
+			}
+		}
 	}
 
 	$scope.newOffer = async function() {
@@ -86,7 +120,7 @@ app.controller('myCtrl', function($scope, $window, $interval) {
 		let usernameErrorFound;
 		switch ($scope.state.selectedMode) {
 			case '2': // paypal email
-				console.log(/^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/.test(username));
+				// console.log(/^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/.test(username));
 				usernameErrorFound = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/.test(username.toLowerCase()) == false;
 				break;
 			
@@ -152,6 +186,30 @@ app.controller('myCtrl', function($scope, $window, $interval) {
 		}
 	}
 
+	$scope.deleteOffer = async function(index, myIndex) {
+		console.log(`index = ${index}`);
+		console.log(`myIndex = ${myIndex}`);
+
+		try {
+			const res = await $scope.contracts.swap.instance.deleteOffer(index, myIndex).send({
+				shouldPollResponse: true
+			});
+
+			console.log(res);
+			toast('Offer Deleted Successfully');
+		} catch (e) {
+			console.error(`Deletion Error - ${e}`);
+			toast('Operation Failed');
+		}
+
+		// console.log(res);
+		// 	if (res == true) {
+		// 	toast('Offer Deleted Successfully');
+		// } else {
+		// 	toast('Operation Failed');
+		// }
+	}
+
 	scope = $scope;
 });
 
@@ -168,7 +226,7 @@ function toast(msg) {
 }
 
 $(document).ready(function() {
-	$('.tabs').tabs({ swipeable: true });
+	$('.tabs').tabs({});
 	$('.modal').modal();
 	$('select').formSelect();
 
