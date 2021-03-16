@@ -13,7 +13,11 @@ app.controller('myCtrl', function($scope, $window, $interval) {
 		tokenValue: '',
 		sellingPrice: '',
 		sellerDisplay: '',
-		sellerUser: ''
+		sellerUser: '',
+		selectedBuyMode: '0',
+		selectedBuyCr: '',
+		tokenBuyValue: '',
+		buyOffer: null
 	};
 	$scope.account = {
 		address: null
@@ -41,6 +45,8 @@ app.controller('myCtrl', function($scope, $window, $interval) {
 		userInvalid: ['Please enter a valid UPI ID', 'Please enter a valid Phone Number', 'Please enter a valid Email', 'Please enter a valid Venmo Username']
 	}
 	$scope.modeLogos = ['bhim_big.png', 'paytm_big.png', 'paypal_big.png', 'venmo.svg'];
+	$scope.modeNames = ['BHIM / PhonePe / PayTM UPI / Google Pay', 'PayTM', 'PayPal', 'Venmo'];
+	$scope.modeUserLabels = ['UPI ID', 'Phone Number', 'Email', 'Username'];
 	
 	
 	// on UI loaded
@@ -107,6 +113,62 @@ app.controller('myCtrl', function($scope, $window, $interval) {
 				console.log($scope.myOffers);
 			}
 		}
+	}
+
+	$scope.getOffer = async function() {
+		if (!$scope.state.selectedBuyCr || $scope.state.selectedBuyCr == '') return toast('Please select a valid Token');
+		
+		if (!$scope.state.selectedBuyMode || $scope.state.selectedBuyMode == '') return toast('Please select a valid Payment Mode');
+
+		if (isNaN($scope.state.tokenBuyValue) || $scope.state.tokenBuyValue < 1) return toast('Please enter a valid token amount (Min: 1)');
+
+		// TODO: only allow non decimal values
+
+		const amtToBuy = $scope.state.tokenBuyValue;// * ($scope.state.selectedBuyCr == 0 ? 1000000 : 100);
+
+		let stopCmd = false;
+		let offerIndex = 0;
+		while (!stopCmd) {
+			try {
+				const resOffer = await $scope.contracts.swap.instance.offers(offerIndex).call();
+				offerIndex++;
+
+				if (resOffer.locked == 0) {
+					continue;
+				}
+
+				resOffer.quantity = resOffer.locked / (resOffer.curr == 0 ? 1000000 : 100);
+
+				if (resOffer.quantity >= amtToBuy && resOffer.curr == $scope.state.selectedBuyCr && resOffer.mode == $scope.state.selectedBuyMode) {
+					$scope.state.buyOffer = {
+						username: resOffer.username,
+						price: resOffer.price,
+						total: amtToBuy * resOffer.price,
+						logo: $scope.modeLogos[resOffer.mode]
+					};
+					$scope.$apply();
+
+					if (resOffer.mode == 0) {
+						const upiUrl = `upi://pay?pa=${resOffer.username}&pn=X&am=${amtToBuy * resOffer.price}`;
+
+						new QRCode(document.getElementById("qrcode"), {
+							text: upiUrl,
+							width: $('#payment-info').width() * 0.5,
+							height: $('#payment-info').width() * 0.5
+						});
+					}
+
+					break;
+				}
+			} catch (e) {
+				console.error(e);
+				stopCmd = true;
+			}
+		}
+	}
+
+	$scope.buyCancel = function() {
+		$window.location.reload();
 	}
 
 	$scope.newOffer = async function() {

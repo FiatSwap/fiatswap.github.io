@@ -62,3 +62,48 @@ main {
 .modal-content>form .row>.col {
 	padding: 0 .75rem 0 0;
 }
+
+.short-form {
+	padding: 20px;
+	width: 400px;
+	margin: 0 auto;
+	margin-top: 25px;
+}
+
+@media only screen and (max-width: 500px) {
+	.short-form {
+		width: 100%;
+		box-shadow: none;
+		margin-top: -5px;
+	}
+}
+
+.w-full {
+	width: 100%;
+}
+
+.kv {
+	padding: 7px 16px;
+}
+
+.kv>p>span:nth-child(2) {
+	float: right;
+}
+
+.buy-offer-logos {
+	text-align: center;
+	margin-bottom: 10px;
+}
+.buy-offer-logos>img {
+	height: 60px;
+}
+
+.buy-offer-logos>img:nth-child(2) {
+	margin-left: 20px;
+}
+
+#qrcode {
+	width: 180px;
+	margin: 0px auto;
+	padding: 35px 0 10px;
+}

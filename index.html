@@ -19,14 +19,14 @@
 			<div class="nav-wrapper white">
 				<a href="javascript:void(0)" class="blue-grey-text text-darken-2 brand-logo">Fiat Swap</a>
 				<ul class="right">
-					<li class="yellow"><a class="black-text" href="javascript:void(0)" onclick="connectWallet()">{{account.address == null ? 'Connect Wallet' : account.address.short}}</a></li>
+					<li class="yellow darken-1"><a class="black-text" href="javascript:void(0)" onclick="connectWallet()">{{account.address == null ? 'Connect Wallet' : account.address.short}}</a></li>
 				</ul>
 			</div>
 
 			<div class="nav-content">
 				<ul class="tabs tabs-transparent tabs-fixed-width">
-					<li class="tab"><a href="#buy">Buy</a></li>
-					<li class="tab"><a href="#sell" class="active">Sell</a></li>
+					<li class="tab"><a href="#buy" class="active">Buy</a></li>
+					<li class="tab"><a href="#sell">Sell</a></li>
 				</ul>
 			</div>
 		</nav>
@@ -34,7 +34,94 @@
 
 	<main>
 		<div id="buy">
-			Buy Area
+			<div ng-show="state.buyOffer != null" class="short-form card">
+				<h5 class="center-align">Send Money</h5>
+				<section>&nbsp;</section>
+
+				<div class="buy-offer-logos">
+					<img ng-src="{{state.selectedBuyCr == 0 ? './trx_big.png' : './usdt_big.png'}}" />
+					<img ng-src="{{state.buyOffer.logo}}" />
+				</div>
+
+				<section>&nbsp;</section>
+
+				<div id="payment-info" class="yellow darken-1">
+					<div ng-if="state.selectedBuyMode == 0" id="qrcode"></div>
+					
+					<div class="kv">
+						<p>
+							<!-- <span>Mode</span> -->
+							<span>{{modeNames[state.selectedBuyMode]}}</span>
+						</p>
+
+						<p>
+							<span>{{modeUserLabels[state.selectedBuyMode]}}</span>
+							<span><b>{{state.buyOffer.username}}</b></span>
+						</p>
+					</div>
+				</div>
+
+				<div>
+					<div class="kv">
+						<p>
+							<span>Buy Price</span>
+							<span>{{state.selectedBuyMode == '2' || state.selectedBuyMode == '3' ? '$' : '₹'}}{{state.buyOffer.price}}</span>
+						</p>
+
+						<p>
+							<span>Total ({{state.tokenBuyValue}} {{state.selectedBuyCr == '0' ? 'TRX' : 'USDT'}})</span>
+							<span><b>{{state.selectedBuyMode == '2' || state.selectedBuyMode == '3' ? '$' : '₹'}}{{state.buyOffer.total}}</b></span>
+						</p>
+					</div>
+				</div>
+
+				<section>&nbsp;</section>
+
+				<div>
+					<button style="margin-bottom: 10px;" class="btn yellow darken-1 w-full black-text">Done</button>
+					<button ng-click="buyCancel()" class="btn grey lighten-3 w-full black-text">Cancel</button>
+				</div>
+
+			</div>
+
+			<form ng-show="state.buyOffer == null" ng-submit="getOffer()" class="short-form card">
+				<h5 class="center-align">Buy Tron or Tether</h5>
+				<section>&nbsp;</section>
+
+				<div class="input-field">
+					<select ng-model="state.selectedBuyCr">
+						<option value="" disabled selected>Select Token</option>
+						<option value="0" data-icon="trx.png">Tron (TRX)</option>
+						<option value="1" data-icon="usdt.png">Tether (USDT)</option>
+					</select>
+				</div>
+
+				<section>&nbsp;</section>
+
+				<div class="input-field">
+					<select ng-model="state.selectedBuyMode">
+						<option value="" disabled selected>Payment Mode</option>
+						<option value="0" data-icon="bhim.png">UPI (INR)</option>
+						<option value="1" data-icon="paytm.png">PayTM (INR)</option>
+						<option value="2" data-icon="paypal.png">Paypal (USD)</option>
+						<option value="3" data-icon="venmo.svg">Venmo (USD)</option>
+					</select>
+				</div>
+
+				<section>&nbsp;</section>
+
+				<div class="input-field">
+					<input ng-model="state.tokenBuyValue" id="buy_amt" type="text">
+					<label for="buy_amt">Amount of Tokens</label>
+					<span class="helper-text">Minimum: 1</span>
+				</div>
+
+				<section>&nbsp;</section>
+
+				<div>
+					<button type="submit" class="btn btn-large yellow darken-1 w-full black-text">Get Best Offer</button>
+				</div>
+			</form>
 		</div>
 
 		<div id="sell">
@@ -123,6 +210,7 @@
 
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+	<script src="qrcode.min.js"></script>
 	<script src="script.js"></script>
 </body>
 
