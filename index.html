@@ -9,7 +9,7 @@
 	<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
 	<link rel="stylesheet" href="style.css">
-	
+
 	<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.9/angular.min.js"></script>
 </head>
 
@@ -19,14 +19,15 @@
 			<div class="nav-wrapper white">
 				<a href="javascript:void(0)" class="blue-grey-text text-darken-2 brand-logo">Fiat Swap</a>
 				<ul class="right">
-					<li class="yellow darken-1"><a class="black-text" href="javascript:void(0)" onclick="connectWallet()">{{account.address == null ? 'Connect Wallet' : account.address.short}}</a></li>
+					<li class="yellow darken-1"><a class="black-text" href="javascript:void(0)"
+							onclick="connectWallet()">{{account.address == null ? 'Connect Wallet' : account.address.short}}</a></li>
 				</ul>
 			</div>
 
 			<div class="nav-content">
 				<ul class="tabs tabs-transparent tabs-fixed-width">
-					<li class="tab"><a href="#buy" class="active">Buy</a></li>
-					<li class="tab"><a href="#sell">Sell</a></li>
+					<li class="tab"><a href="#buy" class="not-active">Buy</a></li>
+					<li class="tab"><a href="#sell" class="active">Sell</a></li>
 				</ul>
 			</div>
 		</nav>
@@ -47,7 +48,7 @@
 
 				<div id="payment-info" class="yellow darken-1">
 					<div ng-if="state.selectedBuyMode == 0" id="qrcode"></div>
-					
+
 					<div class="kv">
 						<p>
 							<!-- <span>Mode</span> -->
@@ -65,12 +66,14 @@
 					<div class="kv">
 						<p>
 							<span>Buy Price</span>
-							<span>{{state.selectedBuyMode == '2' || state.selectedBuyMode == '3' ? '$' : '₹'}}{{state.buyOffer.price}}</span>
+							<span>{{state.selectedBuyMode == '2' || state.selectedBuyMode == '3' ? '$' :
+								'₹'}}{{state.buyOffer.price}}</span>
 						</p>
 
 						<p>
 							<span>Total ({{state.tokenBuyValue}} {{state.selectedBuyCr == '0' ? 'TRX' : 'USDT'}})</span>
-							<span><b>{{state.selectedBuyMode == '2' || state.selectedBuyMode == '3' ? '$' : '₹'}}{{state.buyOffer.total}}</b></span>
+							<span><b>{{state.selectedBuyMode == '2' || state.selectedBuyMode == '3' ? '$' :
+									'₹'}}{{state.buyOffer.total}}</b></span>
 						</p>
 					</div>
 				</div>
@@ -147,15 +150,17 @@
 							{{offer.fiat}}
 						</div>
 						<div class="options">
-							<button data-tooltip="{{offer.display + '<br>(' + offer.username + ')'}}" class="tooltipped btn blue"><i class="material-icons">info</i></button>
-							<button ng-click="deleteOffer(offer.index, offer.myIndex)" data-tooltip="Delete Offer?" class="tooltipped btn red"><i class="material-icons">delete</i></button>
+							<button data-tooltip="{{offer.display + '<br>(' + offer.username + ')'}}" class="tooltipped btn blue"><i
+									class="material-icons">info</i></button>
+							<button ng-click="deleteOffer(offer.localIndex)" data-tooltip="Delete Offer?"
+								class="tooltipped btn red"><i class="material-icons">delete</i></button>
 						</div>
 					</div>
 				</div>
 			</div>
 		</div>
 	</main>
-	
+
 	<footer></footer>
 
 	<div class="modal bottom-sheet" id="sellModal">
@@ -196,17 +201,38 @@
 
 				<div class="input-field">
 					<input ng-model="state.sellingPrice" type="text" placeholder="Selling Price" />
-					<span class="helper-text">Market Price: {{state.selectedMode == '2' || state.selectedMode == '3' ? '$' : '₹'}}{{prices[state.selectedCr][state.selectedMode == '2' || state.selectedMode == '3' ? 'usd' : 'inr']}}</span>
+					<span class="helper-text">Market Price: {{state.selectedMode == '2' || state.selectedMode == '3' ? '$' :
+						'₹'}}{{prices[state.selectedCr][state.selectedMode == '2' || state.selectedMode == '3' ? 'usd' :
+						'inr']}}</span>
 				</div>
 
 				<div>
-					<button class="btn right red darken-1" type="submit">Post</button>
+					<button class="btn right yellow darken-1 black-text" type="submit">Post</button>
 				</div>
 			</form>
 		</div>
 
 		<div class="modal-footer"></div>
 	</div>
+
+	<script src="https://www.gstatic.com/firebasejs/8.3.0/firebase-app.js"></script>
+	<script src="https://www.gstatic.com/firebasejs/8.3.0/firebase-analytics.js"></script>
+
+	<script>
+		var firebaseConfig = {
+			apiKey: "AIzaSyBSldbvOI2q0jkh-ZwDP_SWdOgcBYP2TMo",
+			authDomain: "fiatswap.firebaseapp.com",
+			projectId: "fiatswap",
+			storageBucket: "fiatswap.appspot.com",
+			messagingSenderId: "269993607704",
+			appId: "1:269993607704:web:5e8e3e44199661d033b96d",
+			measurementId: "G-62B2BDZMS4"
+		};
+
+		// Initialize Firebase
+		firebase.initializeApp(firebaseConfig);
+		firebase.analytics();
+	</script>
 
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>

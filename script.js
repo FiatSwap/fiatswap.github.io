@@ -29,8 +29,8 @@ app.controller('myCtrl', function($scope, $window, $interval) {
 	};
 	$scope.contracts = {
 		swap: {
-			address: 'TCFXnW4913MbvsAcYuA3LDvEjJWtTrTrqx',
-			abi: [{"stateMutability":"Nonpayable","type":"Constructor"},{"outputs":[{"type":"address"}],"name":"ERC20Interface","stateMutability":"View","type":"Function"},{"outputs":[{"type":"uint256"}],"inputs":[{"type":"address"},{"type":"uint256"}],"name":"lockedAmts","stateMutability":"View","type":"Function"},{"outputs":[{"name":"curr","type":"uint256"},{"name":"mode","type":"uint256"},{"name":"price","type":"uint256"},{"name":"locked","type":"uint256"},{"name":"display","type":"string"},{"name":"username","type":"string"}],"inputs":[{"type":"uint256"}],"name":"offers","stateMutability":"View","type":"Function"},{"outputs":[{"type":"address"}],"name":"owner","stateMutability":"View","type":"Function"},{"outputs":[{"type":"uint256"}],"inputs":[{"type":"address"},{"type":"uint256"}],"name":"sellers","stateMutability":"View","type":"Function"},{"inputs":[{"name":"mode","type":"uint256"},{"name":"_price","type":"uint256"},{"name":"_display","type":"string"},{"name":"_username","type":"string"}],"name":"postOffer","stateMutability":"Payable","type":"Function"},{"inputs":[{"name":"amt","type":"uint256"},{"name":"mode","type":"uint256"},{"name":"_price","type":"uint256"},{"name":"_display","type":"string"},{"name":"_username","type":"string"}],"name":"postTokenOffer","stateMutability":"Nonpayable","type":"Function"},{"inputs":[{"name":"index","type":"uint256"},{"name":"userIndex","type":"uint256"}],"name":"deleteOffer","stateMutability":"Nonpayable","type":"Function"},{"inputs":[{"name":"buyer","type":"address"},{"name":"amount","type":"uint256"}],"name":"toBuyer","stateMutability":"Nonpayable","type":"Function"}]
+			address: 'THVistmiALzxKrWHSeYiutp8d5mdNu8FEb',
+			abi: [{"stateMutability":"Nonpayable","type":"Constructor"},{"outputs":[{"type":"address"}],"name":"ERC20Interface","stateMutability":"View","type":"Function"},{"outputs":[{"name":"locked","type":"uint256"},{"name":"display","type":"string"},{"name":"username","type":"string"}],"inputs":[{"type":"uint256"},{"type":"uint256"},{"type":"uint256"}],"name":"offers","stateMutability":"View","type":"Function"},{"outputs":[{"type":"address"}],"name":"owner","stateMutability":"View","type":"Function"},{"outputs":[{"name":"mode","type":"uint256"},{"name":"price","type":"uint256"},{"name":"index","type":"uint256"}],"inputs":[{"type":"address"},{"type":"uint256"}],"name":"sellers","stateMutability":"View","type":"Function"},{"inputs":[{"name":"_mode","type":"uint256"},{"name":"_price","type":"uint256"},{"name":"_display","type":"string"},{"name":"_username","type":"string"}],"name":"postOffer","stateMutability":"Payable","type":"Function"},{"inputs":[{"name":"amt","type":"uint256"},{"name":"_mode","type":"uint256"},{"name":"_price","type":"uint256"},{"name":"_display","type":"string"},{"name":"_username","type":"string"}],"name":"postTokenOffer","stateMutability":"Nonpayable","type":"Function"},{"outputs":[{"type":"uint256"}],"name":"myOffersCount","stateMutability":"View","type":"Function"},{"inputs":[{"name":"_mode","type":"uint256"},{"name":"_price","type":"uint256"},{"name":"globalIndex","type":"uint256"},{"name":"indexForUser","type":"uint256"}],"name":"deleteOffer","stateMutability":"Nonpayable","type":"Function"},{"inputs":[{"name":"buyer","type":"address"},{"name":"amount","type":"uint256"}],"name":"toBuyer","stateMutability":"Nonpayable","type":"Function"}]
 		},
 		usdt: {
 			address: 'TXpKNWHzZj2LRcRFJKWjeyDa4tLdENmNgG',
@@ -83,36 +83,73 @@ app.controller('myCtrl', function($scope, $window, $interval) {
 
 		// load posted offers
 		$scope.myOffers = [];
-		let fetchedAll = false;
-		let fetchIndex = 0;
-		while (!fetchedAll) {
-			try {
-				const resIndex = await $scope.contracts.swap.instance.sellers($scope.account.address.long, fetchIndex).call();
-				const offerIndex = Number(resIndex) - 1;
-				if (offerIndex == -1) {
-					fetchIndex++;
-					continue;
-				}
+		try {
+			const offersCount = await $scope.contracts.swap.instance.myOffersCount().call();
+			
+			for (let i = 0; i < offersCount; i++) {
+				try {
+					const resUserOfferData = await $scope.contracts.swap.instance.sellers($scope.account.address.long, i).call();
+					const _globalIndex = resUserOfferData.index - 1;
+					const _mode = resUserOfferData.mode;
+					const _cr = _mode <= 3 ? _mode : _mode - 4;
+					const _fiat = _mode == 0 || _mode == 1 || _mode == 4 || _mode == 5 ? 'inr' : 'usd';
+					const _price = resUserOfferData.price;
 
-				const resOffer = await $scope.contracts.swap.instance.offers(offerIndex).call();
-				resOffer.quantity = resOffer.locked / (resOffer.curr == 0 ? 1000000 : 100);
-				resOffer.logo = $scope.modeLogos[resOffer.mode];
-				resOffer.fiat = (resOffer.mode <= 1 ? '₹' : '$') + resOffer.price;
-				resOffer.myIndex = fetchIndex;
-				resOffer.index = offerIndex;
-
-				$scope.myOffers.push(resOffer);
-				fetchIndex++;
-			} catch(e) {
-				// console.log(fetchIndex);
-				// console.error(e);
-				fetchedAll = true;
-				$scope.$apply();
-				
-				$('.tooltipped').tooltip();
-				console.log($scope.myOffers);
+					const resOffer = await $scope.contracts.swap.instance.offers(_mode, _price, _globalIndex).call();
+					
+					resOffer.quantity = resOffer.locked / (_mode <= 3 ? 1000000 : 100);
+					resOffer.logo = $scope.modeLogos[_cr];
+					resOffer.fiat = (_fiat <= 'inr' ? '₹' : '$') + _price;
+					resOffer.myIndex = i;
+					resOffer.index = _globalIndex;
+					resOffer.mode = _mode;
+					resOffer.price = _price;
+					resOffer.localIndex = i;
+	
+					$scope.myOffers.push(resOffer);
+				} catch(e) {
+					console.error(e);
+				}	
 			}
+		} catch (e) {
+			console.error(e);
+			toast('Error loading offers');
+		} finally {
+			$scope.$apply();
+			$('.tooltipped').tooltip();
 		}
+
+		// $scope.myOffers = [];
+		// let fetchedAll = false;
+		// let fetchIndex = 0;
+		// while (!fetchedAll) {
+		// 	try {
+		// 		const resIndex = await $scope.contracts.swap.instance.sellers($scope.account.address.long, fetchIndex).call();
+		// 		const offerIndex = Number(resIndex) - 1;
+		// 		if (offerIndex == -1) {
+		// 			fetchIndex++;
+		// 			continue;
+		// 		}
+
+		// 		const resOffer = await $scope.contracts.swap.instance.offers(offerIndex).call();
+		// 		resOffer.quantity = resOffer.locked / (resOffer.curr == 0 ? 1000000 : 100);
+		// 		resOffer.logo = $scope.modeLogos[resOffer.mode];
+		// 		resOffer.fiat = (resOffer.mode <= 1 ? '₹' : '$') + resOffer.price;
+		// 		resOffer.myIndex = fetchIndex;
+		// 		resOffer.index = offerIndex;
+
+		// 		$scope.myOffers.push(resOffer);
+		// 		fetchIndex++;
+		// 	} catch(e) {
+		// 		// console.log(fetchIndex);
+		// 		// console.error(e);
+		// 		fetchedAll = true;
+		// 		$scope.$apply();
+				
+		// 		$('.tooltipped').tooltip();
+		// 		console.log($scope.myOffers);
+		// 	}
+		// }
 	}
 
 	$scope.getOffer = async function() {
@@ -120,7 +157,7 @@ app.controller('myCtrl', function($scope, $window, $interval) {
 		
 		if (!$scope.state.selectedBuyMode || $scope.state.selectedBuyMode == '') return toast('Please select a valid Payment Mode');
 
-		if (isNaN($scope.state.tokenBuyValue) || $scope.state.tokenBuyValue < 1) return toast('Please enter a valid token amount (Min: 1)');
+		if (isNaN($scope.state.tokenBuyValue) || $scope.state.tokenBuyValue < 10) return toast('Please enter a valid token amount (Min: 10)');
 
 		// TODO: only allow non decimal values
 
@@ -198,6 +235,7 @@ app.controller('myCtrl', function($scope, $window, $interval) {
 				usernameErrorFound = /^[a-zA-Z0-9\.\-]{2,256}\@[a-zA-Z][a-zA-Z]{2,64}/.test(username) == false;
 				break;
 		}
+		
 		if (usernameErrorFound) return toast($scope.errors.userInvalid[$scope.state.selectedMode]);
 
 		if ($scope.state.sellerDisplay.trim() == '') return toast('Please enter the name on your account');
@@ -233,7 +271,7 @@ app.controller('myCtrl', function($scope, $window, $interval) {
 			}
 
 			if (success) {
-				const res = await $scope.contracts.swap.instance.postTokenOffer(amt, $scope.state.selectedMode, $scope.state.sellingPrice, $scope.state.sellerDisplay, $scope.state.sellerUser).send({
+				const res = await $scope.contracts.swap.instance.postTokenOffer(amt, 4 + $scope.state.selectedMode, $scope.state.sellingPrice, $scope.state.sellerDisplay, $scope.state.sellerUser).send({
 					callValue: 0,
 					shouldPollResponse: true
 				});
@@ -248,12 +286,12 @@ app.controller('myCtrl', function($scope, $window, $interval) {
 		}
 	}
 
-	$scope.deleteOffer = async function(index, myIndex) {
-		console.log(`index = ${index}`);
-		console.log(`myIndex = ${myIndex}`);
+	$scope.deleteOffer = async function(localIndex) {
+		// console.log(`index = ${index}`);
+		// console.log(`myIndex = ${myIndex}`);
 
 		try {
-			const res = await $scope.contracts.swap.instance.deleteOffer(index, myIndex).send({
+			const res = await $scope.contracts.swap.instance.deleteOffer($scope.myOffers[localIndex].mode, $scope.myOffers[localIndex].price, $scope.myOffers[localIndex].index, $scope.myOffers[localIndex].myIndex).send({
 				shouldPollResponse: true
 			});
 
