@@ -29,8 +29,8 @@ app.controller('myCtrl', function($scope, $window, $interval) {
 	};
 	$scope.contracts = {
 		swap: {
-			address: 'TDWdyPcTvwKUhBN2M8V9EQ6hTQSVbsGxwq',
-			abi: [{"stateMutability":"Nonpayable","type":"Constructor"},{"outputs":[{"type":"address"}],"name":"ERC20Interface","stateMutability":"View","type":"Function"},{"outputs":[{"name":"locked","type":"uint256"},{"name":"display","type":"string"},{"name":"username","type":"string"}],"inputs":[{"type":"uint256"},{"type":"uint256"},{"type":"uint256"}],"name":"offers","stateMutability":"View","type":"Function"},{"outputs":[{"type":"address"}],"name":"owner","stateMutability":"View","type":"Function"},{"outputs":[{"name":"mode","type":"uint256"},{"name":"price","type":"uint256"},{"name":"index","type":"uint256"}],"inputs":[{"type":"address"},{"type":"uint256"}],"name":"sellers","stateMutability":"View","type":"Function"},{"inputs":[{"name":"_mode","type":"uint256"},{"name":"_price","type":"uint256"},{"name":"_display","type":"string"},{"name":"_username","type":"string"}],"name":"postOffer","stateMutability":"Payable","type":"Function"},{"inputs":[{"name":"amt","type":"uint256"},{"name":"_mode","type":"uint256"},{"name":"_price","type":"uint256"},{"name":"_display","type":"string"},{"name":"_username","type":"string"}],"name":"postTokenOffer","stateMutability":"Nonpayable","type":"Function"},{"outputs":[{"type":"uint256"}],"name":"myOffersCount","stateMutability":"View","type":"Function"},{"outputs":[{"type":"tuple"}],"inputs":[{"name":"_mode","type":"uint256"},{"name":"_price","type":"uint256"},{"name":"amt","type":"uint256"}],"name":"getOffer","stateMutability":"View","type":"Function"},{"inputs":[{"name":"_mode","type":"uint256"},{"name":"_price","type":"uint256"},{"name":"globalIndex","type":"uint256"},{"name":"indexForUser","type":"uint256"}],"name":"deleteOffer","stateMutability":"Nonpayable","type":"Function"},{"inputs":[{"name":"buyer","type":"address"},{"name":"amount","type":"uint256"}],"name":"toBuyer","stateMutability":"Nonpayable","type":"Function"}]
+			address: 'TJ83kWUPAdXqr72y9H5Xm2bWNgap473k9a',
+			abi: [{"stateMutability":"Nonpayable","type":"Constructor"},{"outputs":[{"type":"address"}],"name":"ERC20Interface","stateMutability":"View","type":"Function"},{"outputs":[{"name":"locked","type":"uint256"},{"name":"display","type":"string"},{"name":"username","type":"string"}],"inputs":[{"type":"uint256"},{"type":"uint256"},{"type":"uint256"}],"name":"offers","stateMutability":"View","type":"Function"},{"outputs":[{"type":"address"}],"name":"owner","stateMutability":"View","type":"Function"},{"outputs":[{"name":"mode","type":"uint256"},{"name":"price","type":"uint256"},{"name":"index","type":"uint256"}],"inputs":[{"type":"address"},{"type":"uint256"}],"name":"sellers","stateMutability":"View","type":"Function"},{"inputs":[{"name":"_mode","type":"uint256"},{"name":"_price","type":"uint256"},{"name":"_display","type":"string"},{"name":"_username","type":"string"}],"name":"postOffer","stateMutability":"Payable","type":"Function"},{"inputs":[{"name":"amt","type":"uint256"},{"name":"_mode","type":"uint256"},{"name":"_price","type":"uint256"},{"name":"_display","type":"string"},{"name":"_username","type":"string"}],"name":"postTokenOffer","stateMutability":"Nonpayable","type":"Function"},{"outputs":[{"type":"uint256"}],"name":"myOffersCount","stateMutability":"View","type":"Function"},{"outputs":[{"type":"string"}],"inputs":[{"name":"_mode","type":"uint256"},{"name":"_price","type":"uint256"},{"name":"amt","type":"uint256"}],"name":"getOffer","stateMutability":"View","type":"Function"},{"inputs":[{"name":"_mode","type":"uint256"},{"name":"_price","type":"uint256"},{"name":"globalIndex","type":"uint256"},{"name":"indexForUser","type":"uint256"}],"name":"deleteOffer","stateMutability":"Nonpayable","type":"Function"},{"inputs":[{"name":"buyer","type":"address"},{"name":"amount","type":"uint256"}],"name":"toBuyer","stateMutability":"Nonpayable","type":"Function"}]
 		},
 		usdt: {
 			address: 'TXpKNWHzZj2LRcRFJKWjeyDa4tLdENmNgG',
@@ -99,11 +99,11 @@ app.controller('myCtrl', function($scope, $window, $interval) {
 					
 					resOffer.quantity = resOffer.locked / (_mode <= 3 ? 1000000 : 100);
 					resOffer.logo = $scope.modeLogos[_cr];
-					resOffer.fiat = (_fiat <= 'inr' ? '₹' : '$') + _price;
+					resOffer.price = _price / 1000000;
+					resOffer.fiat = (_fiat <= 'inr' ? '₹' : '$') + resOffer.price;
 					resOffer.myIndex = i;
 					resOffer.index = _globalIndex;
 					resOffer.mode = _mode;
-					resOffer.price = _price;
 					resOffer.localIndex = i;
 	
 					$scope.myOffers.push(resOffer);
@@ -245,12 +245,43 @@ app.controller('myCtrl', function($scope, $window, $interval) {
 	}
 
 	$scope.getOffer2 = async function (arrayIndex) {
+		console.log(`arrayIndex = ${arrayIndex}`);
+
 		const request = $scope.buyRequest;
 		try {
 			const resOffer = await $scope.contracts.swap.instance.getOffer(request._mode, $scope.possiblePrices[arrayIndex], request.amt).call();
 			console.log(resOffer);
+
+			if (resOffer == '') {
+				arrayIndex++;
+				if (arrayIndex < $scope.possiblePrices.length) $scope.getOffer2(arrayIndex++);	
+			} else {
+				const _price = $scope.possiblePrices[arrayIndex] / 1000000;
+				const _total = request.amt * _price;
+				
+				$scope.state.buyOffer = {
+					username: resOffer,
+					price: _price,
+					total: _total,
+					logo: $scope.modeLogos[request._mode <= 3 ? request._mode : request._mode - 4]
+				};
+				$scope.$apply();
+
+				if (request._mode == 0) {
+					const upiUrl = `upi://pay?pa=${resOffer}&pn=X&am=${_total}`;
+
+					new QRCode(document.getElementById("qrcode"), {
+						text: upiUrl,
+						width: $('#payment-info').width() * 0.5,
+						height: $('#payment-info').width() * 0.5
+					});
+				}
+			}
 		} catch (e) {
 			console.error(e);
+
+			arrayIndex++;
+			if (arrayIndex < $scope.possiblePrices.length) $scope.getOffer2(arrayIndex++);
 		}
 		// return resOffer;
 	}
@@ -296,7 +327,7 @@ app.controller('myCtrl', function($scope, $window, $interval) {
 		if (isNaN($scope.state.sellingPrice) || $scope.state.sellingPrice < 0.0001) return toast('Please enter a valid selling price');
 
 		if ($scope.state.selectedCr == 'tron') {
-			const res = await $scope.contracts.swap.instance.postOffer($scope.state.selectedMode, $scope.state.sellingPrice * 1000000, $scope.state.sellerDisplay, $scope.state.sellerUser).send({
+			const res = await $scope.contracts.swap.instance.postOffer($scope.state.selectedMode, Math.round($scope.state.sellingPrice * 1000000), $scope.state.sellerDisplay, $scope.state.sellerUser).send({
 				callValue: 1000000 * $scope.state.tokenValue,
 				shouldPollResponse: true
 			});
