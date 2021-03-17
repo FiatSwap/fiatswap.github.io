@@ -29,8 +29,8 @@ app.controller('myCtrl', function($scope, $window, $interval) {
 	};
 	$scope.contracts = {
 		swap: {
-			address: 'THVistmiALzxKrWHSeYiutp8d5mdNu8FEb',
-			abi: [{"stateMutability":"Nonpayable","type":"Constructor"},{"outputs":[{"type":"address"}],"name":"ERC20Interface","stateMutability":"View","type":"Function"},{"outputs":[{"name":"locked","type":"uint256"},{"name":"display","type":"string"},{"name":"username","type":"string"}],"inputs":[{"type":"uint256"},{"type":"uint256"},{"type":"uint256"}],"name":"offers","stateMutability":"View","type":"Function"},{"outputs":[{"type":"address"}],"name":"owner","stateMutability":"View","type":"Function"},{"outputs":[{"name":"mode","type":"uint256"},{"name":"price","type":"uint256"},{"name":"index","type":"uint256"}],"inputs":[{"type":"address"},{"type":"uint256"}],"name":"sellers","stateMutability":"View","type":"Function"},{"inputs":[{"name":"_mode","type":"uint256"},{"name":"_price","type":"uint256"},{"name":"_display","type":"string"},{"name":"_username","type":"string"}],"name":"postOffer","stateMutability":"Payable","type":"Function"},{"inputs":[{"name":"amt","type":"uint256"},{"name":"_mode","type":"uint256"},{"name":"_price","type":"uint256"},{"name":"_display","type":"string"},{"name":"_username","type":"string"}],"name":"postTokenOffer","stateMutability":"Nonpayable","type":"Function"},{"outputs":[{"type":"uint256"}],"name":"myOffersCount","stateMutability":"View","type":"Function"},{"inputs":[{"name":"_mode","type":"uint256"},{"name":"_price","type":"uint256"},{"name":"globalIndex","type":"uint256"},{"name":"indexForUser","type":"uint256"}],"name":"deleteOffer","stateMutability":"Nonpayable","type":"Function"},{"inputs":[{"name":"buyer","type":"address"},{"name":"amount","type":"uint256"}],"name":"toBuyer","stateMutability":"Nonpayable","type":"Function"}]
+			address: 'TDWdyPcTvwKUhBN2M8V9EQ6hTQSVbsGxwq',
+			abi: [{"stateMutability":"Nonpayable","type":"Constructor"},{"outputs":[{"type":"address"}],"name":"ERC20Interface","stateMutability":"View","type":"Function"},{"outputs":[{"name":"locked","type":"uint256"},{"name":"display","type":"string"},{"name":"username","type":"string"}],"inputs":[{"type":"uint256"},{"type":"uint256"},{"type":"uint256"}],"name":"offers","stateMutability":"View","type":"Function"},{"outputs":[{"type":"address"}],"name":"owner","stateMutability":"View","type":"Function"},{"outputs":[{"name":"mode","type":"uint256"},{"name":"price","type":"uint256"},{"name":"index","type":"uint256"}],"inputs":[{"type":"address"},{"type":"uint256"}],"name":"sellers","stateMutability":"View","type":"Function"},{"inputs":[{"name":"_mode","type":"uint256"},{"name":"_price","type":"uint256"},{"name":"_display","type":"string"},{"name":"_username","type":"string"}],"name":"postOffer","stateMutability":"Payable","type":"Function"},{"inputs":[{"name":"amt","type":"uint256"},{"name":"_mode","type":"uint256"},{"name":"_price","type":"uint256"},{"name":"_display","type":"string"},{"name":"_username","type":"string"}],"name":"postTokenOffer","stateMutability":"Nonpayable","type":"Function"},{"outputs":[{"type":"uint256"}],"name":"myOffersCount","stateMutability":"View","type":"Function"},{"outputs":[{"type":"tuple"}],"inputs":[{"name":"_mode","type":"uint256"},{"name":"_price","type":"uint256"},{"name":"amt","type":"uint256"}],"name":"getOffer","stateMutability":"View","type":"Function"},{"inputs":[{"name":"_mode","type":"uint256"},{"name":"_price","type":"uint256"},{"name":"globalIndex","type":"uint256"},{"name":"indexForUser","type":"uint256"}],"name":"deleteOffer","stateMutability":"Nonpayable","type":"Function"},{"inputs":[{"name":"buyer","type":"address"},{"name":"amount","type":"uint256"}],"name":"toBuyer","stateMutability":"Nonpayable","type":"Function"}]
 		},
 		usdt: {
 			address: 'TXpKNWHzZj2LRcRFJKWjeyDa4tLdENmNgG',
@@ -163,6 +163,46 @@ app.controller('myCtrl', function($scope, $window, $interval) {
 
 		const amtToBuy = $scope.state.tokenBuyValue;// * ($scope.state.selectedBuyCr == 0 ? 1000000 : 100);
 
+		$scope.buyRequest = {
+			_mode: $scope.state.selectedBuyCr == 0 ? $scope.state.selectedBuyMode : $scope.state.selectedBuyMode + 4,
+			amt: amtToBuy
+		};
+
+		//
+		const marketPrice = $scope.prices[$scope.state.selectedBuyCr == 0 ? 'tron' : 'tether'][$scope.state.selectedBuyMode == 0 || $scope.state.selectedBuyMode == 1 ? 'inr' : 'usd'];
+		console.log(`marketPrice = ${marketPrice}`);
+		
+		const scale = 0.05;
+		
+		let possiblePrices = [];
+		let temp = getLowerMultiple(marketPrice, scale);
+		possiblePrices.push(temp);
+		for (let i = 0; i < 5; i++) {
+			temp = prevMultiple(temp, scale);
+			possiblePrices.push(temp);
+		}
+		temp = getHigherMultiple(marketPrice, scale);
+		possiblePrices.push(temp);
+		for (let i = 0; i < 5; i++) {
+			temp = nextMultiple(temp, scale);
+			possiblePrices.push(temp);
+		}
+
+		console.log(possiblePrices);
+		possiblePrices.sort();
+		possiblePrices = possiblePrices.map(function(e) {
+			return Math.round(e * 1000000);
+		});
+		console.log(possiblePrices);
+
+		$scope.possiblePrices = possiblePrices;
+		await $scope.getOffer2(0);
+		
+		// console.log(`getHigherMultiple = ${getHigherMultiple(marketPrice, scale)}`);
+		// console.log(`getLowerMultiple = ${getLowerMultiple(marketPrice, scale)}`);
+		return;
+		//
+
 		let stopCmd = false;
 		let offerIndex = 0;
 		while (!stopCmd) {
@@ -202,6 +242,17 @@ app.controller('myCtrl', function($scope, $window, $interval) {
 				stopCmd = true;
 			}
 		}
+	}
+
+	$scope.getOffer2 = async function (arrayIndex) {
+		const request = $scope.buyRequest;
+		try {
+			const resOffer = await $scope.contracts.swap.instance.getOffer(request._mode, $scope.possiblePrices[arrayIndex], request.amt).call();
+			console.log(resOffer);
+		} catch (e) {
+			console.error(e);
+		}
+		// return resOffer;
 	}
 
 	$scope.buyCancel = function() {
@@ -245,7 +296,7 @@ app.controller('myCtrl', function($scope, $window, $interval) {
 		if (isNaN($scope.state.sellingPrice) || $scope.state.sellingPrice < 0.0001) return toast('Please enter a valid selling price');
 
 		if ($scope.state.selectedCr == 'tron') {
-			const res = await $scope.contracts.swap.instance.postOffer($scope.state.selectedMode, $scope.state.sellingPrice, $scope.state.sellerDisplay, $scope.state.sellerUser).send({
+			const res = await $scope.contracts.swap.instance.postOffer($scope.state.selectedMode, $scope.state.sellingPrice * 1000000, $scope.state.sellerDisplay, $scope.state.sellerUser).send({
 				callValue: 1000000 * $scope.state.tokenValue,
 				shouldPollResponse: true
 			});
@@ -340,9 +391,40 @@ function loadPrices() {
 			try {
 				scope.prices = data;
 				scope.$apply();
+
+				console.log(scope.prices);
 			} catch (e) {}
 		}
 
 		setTimeout(loadPrices, 60000);
 	});
+}
+
+// multiple
+function getHigherMultiple(x, scale) {
+	x = scale * Math.ceil(x / scale);
+	return arth(x);
+}
+function getLowerMultiple(x, scale) {
+	x = scale * Math.floor(x / scale);
+	return arth(x);
+}
+function nextMultiple(x, scale) {
+	x += scale;
+	return arth(x);
+}
+function prevMultiple(x, scale) {
+	x -= scale;
+	return arth(x);
+}
+// function countDecimals(x) {
+// 	try {
+// 		x = Number(x);
+// 		return x.toString().split('.')[1].length;
+// 	} catch (e) {
+// 		return 0;
+// 	}
+// }
+function arth(n) {
+	return Math.round((n) * 1e12) / 1e12;
 }
