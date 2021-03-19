@@ -5,7 +5,7 @@ const config = {
 
 let scope;
 const app = angular.module('myApp', []);
-app.controller('myCtrl', function($scope, $window, $interval) {
+app.controller('myCtrl', function($scope, $window, $interval, $timeout) {
 	$scope.state = {
 		loading: true,
 		selectedMode: '0',
@@ -17,7 +17,8 @@ app.controller('myCtrl', function($scope, $window, $interval) {
 		selectedBuyMode: '0',
 		selectedBuyCr: '',
 		tokenBuyValue: '',
-		buyOffer: null
+		buyOffer: null,
+		didBuy: false
 	};
 	$scope.account = {
 		address: null
@@ -283,12 +284,20 @@ app.controller('myCtrl', function($scope, $window, $interval) {
 		await db.ref(`offers/${$scope.state.buyOffer.mode}-${$scope.state.buyOffer.op}-${$scope.state.buyOffer.ii}/${fAuth.currentUser.uid}`).set(prev + Number($scope.state.buyOffer.amt))
 		// await db.collection(`${$scope.state.buyOffer.mode}-${$scope.state.buyOffer.op}-${$scope.state.buyOffer.ii}`).add(upd)
 		.then(function() {
-			toast('Success');
-			$window.location.reload();
+			toast('Please share payment screenshot');
+
+			$scope.state.didBuy = true;
+			$scope.$apply();
+
+			// $window.location.reload();
 		})
 		.catch(function(e) {
 			console.error(e);
 		});
+	}
+
+	$scope.shareSS = function() {
+		$('#ss-select').click();
 	}
 
 	$scope.getOffer3 = async function(request, _price, innerIndex) {
@@ -536,6 +545,21 @@ function toast(msg) {
 }
 
 $(document).ready(function() {
+	$('#ss-select').change(function() {
+		const file = document.querySelector('#ss-select').files[0];
+		rage.child(`purchases/${scope.state.buyOffer.mode}-${scope.state.buyOffer.op}-${scope.state.buyOffer.ii}/${fAuth.currentUser.uid}/${getMillis()}.jpg`).put(file, {})
+		.then(function() {
+			toast('Purchase Request Submitted');
+			setTimeout(function() {
+				location.reload();
+			}, 3000);
+		})
+		.catch(function(e) {
+			console.error(e);
+			toast('Failed to upload screenshot');
+		});
+	});
+
 	$('.tabs').tabs({});
 	$('.modal').modal();
 	$('select').formSelect();
@@ -575,6 +599,9 @@ function nextMultiple(x, scale) {
 function prevMultiple(x, scale) {
 	x -= scale;
 	return arth(x);
+}
+function getMillis() {
+	return new Date().getTime();
 }
 // function countDecimals(x) {
 // 	try {
