@@ -81,7 +81,8 @@
 				<section>&nbsp;</section>
 
 				<div>
-					<button style="margin-bottom: 10px;" class="btn yellow darken-1 w-full black-text">Done</button>
+					<button ng-click="bought()" style="margin-bottom: 10px;"
+						class="btn yellow darken-1 w-full black-text">Done</button>
 					<button ng-click="buyCancel()" class="btn grey lighten-3 w-full black-text">Cancel</button>
 				</div>
 
@@ -217,21 +218,47 @@
 
 	<script src="https://www.gstatic.com/firebasejs/8.3.0/firebase-app.js"></script>
 	<script src="https://www.gstatic.com/firebasejs/8.3.0/firebase-analytics.js"></script>
+	<script src="https://www.gstatic.com/firebasejs/8.3.0/firebase-auth.js"></script>
+	<script src="https://www.gstatic.com/firebasejs/8.3.0/firebase-database.js"></script>
 
 	<script>
-		var firebaseConfig = {
-			apiKey: "AIzaSyBSldbvOI2q0jkh-ZwDP_SWdOgcBYP2TMo",
-			authDomain: "fiatswap.firebaseapp.com",
-			projectId: "fiatswap",
-			storageBucket: "fiatswap.appspot.com",
-			messagingSenderId: "269993607704",
-			appId: "1:269993607704:web:5e8e3e44199661d033b96d",
-			measurementId: "G-62B2BDZMS4"
+		const firebaseConfig = {
+			apiKey: "AIzaSyBeswB1ySQ9p5jPNDMnp101c3gYMEaVSuc",
+			authDomain: "fs-001-bf96a.firebaseapp.com",
+			projectId: "fs-001-bf96a",
+			storageBucket: "fs-001-bf96a.appspot.com",
+			messagingSenderId: "456094791914",
+			appId: "1:456094791914:web:ea9f2178be9c7af0cbff93",
+			measurementId: "G-WGEMJ2YR7V"
 		};
+
+		// const firebaseConfig = {
+		// 	apiKey: "AIzaSyBSldbvOI2q0jkh-ZwDP_SWdOgcBYP2TMo",
+		// 	authDomain: "fiatswap.firebaseapp.com",
+		// 	projectId: "fiatswap",
+		// 	storageBucket: "fiatswap.appspot.com",
+		// 	messagingSenderId: "269993607704",
+		// 	appId: "1:269993607704:web:5e8e3e44199661d033b96d",
+		// 	measurementId: "G-62B2BDZMS4"
+		// };
 
 		// Initialize Firebase
 		firebase.initializeApp(firebaseConfig);
 		firebase.analytics();
+
+		// Database
+		const fAuth = firebase.auth();
+		fAuth.onAuthStateChanged(function (user) {
+			if (!user) {
+				fAuth.signInAnonymously()
+					.then()
+					.catch(e => {
+						console.error(e);
+					});
+			}
+		});
+
+		const db = firebase.database();
 	</script>
 
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>

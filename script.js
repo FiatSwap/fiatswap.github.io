@@ -29,8 +29,8 @@ app.controller('myCtrl', function($scope, $window, $interval) {
 	};
 	$scope.contracts = {
 		swap: {
-			address: 'TJ83kWUPAdXqr72y9H5Xm2bWNgap473k9a',
-			abi: [{"stateMutability":"Nonpayable","type":"Constructor"},{"outputs":[{"type":"address"}],"name":"ERC20Interface","stateMutability":"View","type":"Function"},{"outputs":[{"name":"locked","type":"uint256"},{"name":"display","type":"string"},{"name":"username","type":"string"}],"inputs":[{"type":"uint256"},{"type":"uint256"},{"type":"uint256"}],"name":"offers","stateMutability":"View","type":"Function"},{"outputs":[{"type":"address"}],"name":"owner","stateMutability":"View","type":"Function"},{"outputs":[{"name":"mode","type":"uint256"},{"name":"price","type":"uint256"},{"name":"index","type":"uint256"}],"inputs":[{"type":"address"},{"type":"uint256"}],"name":"sellers","stateMutability":"View","type":"Function"},{"inputs":[{"name":"_mode","type":"uint256"},{"name":"_price","type":"uint256"},{"name":"_display","type":"string"},{"name":"_username","type":"string"}],"name":"postOffer","stateMutability":"Payable","type":"Function"},{"inputs":[{"name":"amt","type":"uint256"},{"name":"_mode","type":"uint256"},{"name":"_price","type":"uint256"},{"name":"_display","type":"string"},{"name":"_username","type":"string"}],"name":"postTokenOffer","stateMutability":"Nonpayable","type":"Function"},{"outputs":[{"type":"uint256"}],"name":"myOffersCount","stateMutability":"View","type":"Function"},{"outputs":[{"type":"string"}],"inputs":[{"name":"_mode","type":"uint256"},{"name":"_price","type":"uint256"},{"name":"amt","type":"uint256"}],"name":"getOffer","stateMutability":"View","type":"Function"},{"inputs":[{"name":"_mode","type":"uint256"},{"name":"_price","type":"uint256"},{"name":"globalIndex","type":"uint256"},{"name":"indexForUser","type":"uint256"}],"name":"deleteOffer","stateMutability":"Nonpayable","type":"Function"},{"inputs":[{"name":"buyer","type":"address"},{"name":"amount","type":"uint256"}],"name":"toBuyer","stateMutability":"Nonpayable","type":"Function"}]
+			address: 'TUJxQcqh7PQA6q41SN92dzoBdBaauXDAWT',
+			abi: [{"stateMutability":"Nonpayable","type":"Constructor"},{"outputs":[{"type":"address"}],"name":"ERC20Interface","stateMutability":"View","type":"Function"},{"outputs":[{"name":"locked","type":"uint256"},{"name":"display","type":"string"},{"name":"username","type":"string"}],"inputs":[{"type":"uint256"},{"type":"uint256"},{"type":"uint256"}],"name":"offers","stateMutability":"View","type":"Function"},{"outputs":[{"type":"address"}],"name":"owner","stateMutability":"View","type":"Function"},{"outputs":[{"name":"mode","type":"uint256"},{"name":"price","type":"uint256"},{"name":"index","type":"uint256"}],"inputs":[{"type":"address"},{"type":"uint256"}],"name":"sellers","stateMutability":"View","type":"Function"},{"inputs":[{"name":"_mode","type":"uint256"},{"name":"_price","type":"uint256"},{"name":"_display","type":"string"},{"name":"_username","type":"string"}],"name":"postOffer","stateMutability":"Payable","type":"Function"},{"inputs":[{"name":"amt","type":"uint256"},{"name":"_mode","type":"uint256"},{"name":"_price","type":"uint256"},{"name":"_display","type":"string"},{"name":"_username","type":"string"}],"name":"postTokenOffer","stateMutability":"Nonpayable","type":"Function"},{"outputs":[{"type":"uint256"}],"name":"myOffersCount","stateMutability":"View","type":"Function"},{"outputs":[{"type":"string[]"}],"inputs":[{"name":"_mode","type":"uint256"},{"name":"_price","type":"uint256"},{"name":"amt","type":"uint256"}],"name":"getOfferUsers","stateMutability":"View","type":"Function"},{"outputs":[{"type":"uint256[]"}],"inputs":[{"name":"_mode","type":"uint256"},{"name":"_price","type":"uint256"},{"name":"amt","type":"uint256"}],"name":"getOfferAmts","stateMutability":"View","type":"Function"},{"inputs":[{"name":"_mode","type":"uint256"},{"name":"_price","type":"uint256"},{"name":"globalIndex","type":"uint256"},{"name":"indexForUser","type":"uint256"}],"name":"deleteOffer","stateMutability":"Nonpayable","type":"Function"},{"inputs":[{"name":"buyer","type":"address"},{"name":"amount","type":"uint256"}],"name":"toBuyer","stateMutability":"Nonpayable","type":"Function"}]
 		},
 		usdt: {
 			address: 'TXpKNWHzZj2LRcRFJKWjeyDa4tLdENmNgG',
@@ -196,7 +196,8 @@ app.controller('myCtrl', function($scope, $window, $interval) {
 		console.log(possiblePrices);
 
 		$scope.possiblePrices = possiblePrices;
-		await $scope.getOffer2(0);
+		$scope.buyResArrayIndex = -1;
+		await $scope.getOffer2();
 		
 		// console.log(`getHigherMultiple = ${getHigherMultiple(marketPrice, scale)}`);
 		// console.log(`getLowerMultiple = ${getLowerMultiple(marketPrice, scale)}`);
@@ -244,38 +245,165 @@ app.controller('myCtrl', function($scope, $window, $interval) {
 		}
 	}
 
-	$scope.getOffer2 = async function (arrayIndex) {
-		console.log(`arrayIndex = ${arrayIndex}`);
+	$scope.showOffer = function(request, price, username, innerIndex) {
+		const op = price;
+		const _price = price / 1000000;
+		const _total = request.amt * _price;
+		
+		$scope.state.buyOffer = {
+			amt: request.amt,
+			ii: innerIndex,
+			op,
+			mode: request._mode,
+			username,
+			price: _price,
+			total: _total,
+			logo: $scope.modeLogos[request._mode <= 3 ? request._mode : request._mode - 4]
+		};
+		$scope.$apply();
+
+		if (request._mode == 0) {
+			const upiUrl = `upi://pay?pa=${username}&pn=X&am=${_total}`;
+
+			new QRCode(document.getElementById("qrcode"), {
+				text: upiUrl,
+				width: $('#payment-info').width() * 0.5,
+				height: $('#payment-info').width() * 0.5
+			});
+		}
+	}
+
+	$scope.bought = async function() {
+		console.log(`fAuth.currentUser.uid = ${fAuth.currentUser.uid}`);
+
+		const boughtByMe = await db.ref(`offers/${$scope.state.buyOffer.mode}-${$scope.state.buyOffer.op}-${$scope.state.buyOffer.ii}/${fAuth.currentUser.uid}`).get();
+		let prev = boughtByMe.exists() && !isNaN(boughtByMe.val()) ? Number(boughtByMe.val()) : 0;
+		console.log(`prev = ${prev}`);
+		
+		await db.ref(`offers/${$scope.state.buyOffer.mode}-${$scope.state.buyOffer.op}-${$scope.state.buyOffer.ii}/${fAuth.currentUser.uid}`).set(prev + Number($scope.state.buyOffer.amt))
+		// await db.collection(`${$scope.state.buyOffer.mode}-${$scope.state.buyOffer.op}-${$scope.state.buyOffer.ii}`).add(upd)
+		.then(function() {
+			toast('Success');
+			$window.location.reload();
+		})
+		.catch(function(e) {
+			console.error(e);
+		});
+	}
+
+	$scope.getOffer3 = async function(request, _price, innerIndex) {
+		innerIndex++;
+		console.log(`innerIndex = ${innerIndex}`);
+
+		if (innerIndex >= $scope.offerUsernames.length) {
+			$scope.getOffer2();
+			return;
+		} else if ($scope.offerUsernames[innerIndex] == '') {
+			$scope.getOffer3(request, _price, innerIndex);
+		}
+
+		await db.ref().child('offers').child(`${request._mode}-${_price}-${innerIndex}`).get().then(function(snapshot) {
+		// await db.collection(`${request._mode}-${_price}-${innerIndex}`).get().then(function(snapshot) {
+			console.log('Fb ' + 1);
+			
+			let isValid = !snapshot.exists();
+			console.log(`exists = ${snapshot.exists()}`);
+
+			if (snapshot.exists()) {
+				let taken = 0;
+				const buyers = snapshot.val();
+
+				for (let buyer in buyers) {					
+					if (buyers.hasOwnProperty(buyer)) {
+						taken += Number(buyers[buyer]) * 1000000;
+						console.log(`taken part = ${taken}`);
+					}
+				}
+
+				console.log(`ttl = ${$scope.offerAmts[innerIndex]}`);
+				
+				isValid = $scope.offerAmts[innerIndex] - taken >= request.amt * 1000000;
+			}
+
+			console.log(`isValid = ${isValid}`);
+
+			if (isValid) $scope.showOffer(request, _price, $scope.offerUsernames[innerIndex], innerIndex);
+			else $scope.getOffer3(request, _price, innerIndex);
+		})
+		.catch(function(e) {
+			console.log('Fb ' + 1);
+			console.error(e);
+		});
+
+		console.log('Fb ' + 2);
+	}
+
+	$scope.getOffer2 = async function () {
+		$scope.buyResArrayIndex++;
+
+		let arrayIndex = $scope.buyResArrayIndex;
+		if (arrayIndex >= $scope.possiblePrices.length) {
+			return;
+		}
+
+		console.log(`arrayIndex = ${$scope.buyResArrayIndex}`);
 
 		const request = $scope.buyRequest;
 		try {
-			const resOffer = await $scope.contracts.swap.instance.getOffer(request._mode, $scope.possiblePrices[arrayIndex], request.amt).call();
-			console.log(resOffer);
+			$scope.offerUsernames = await $scope.contracts.swap.instance.getOfferUsers(request._mode, $scope.possiblePrices[arrayIndex], request.amt).call();
+			$scope.offerAmts = await $scope.contracts.swap.instance.getOfferAmts(request._mode, $scope.possiblePrices[arrayIndex], request.amt).call();
+			console.log($scope.offerUsernames);
+			console.log($scope.offerAmts);
 
-			if (resOffer == '') {
-				arrayIndex++;
-				if (arrayIndex < $scope.possiblePrices.length) $scope.getOffer2(arrayIndex++);	
+			if ($scope.offerUsernames.length < 1 || $scope.offerAmts.length < 1) {
+				$scope.getOffer2();
+				// arrayIndex++;
+				// if (arrayIndex < $scope.possiblePrices.length) $scope.getOffer2(arrayIndex++);	
 			} else {
-				const _price = $scope.possiblePrices[arrayIndex] / 1000000;
-				const _total = request.amt * _price;
+				// $scope.offerUsernames = resNames;
+				// $scope.offerAmts = resAmts;
+				$scope.getOffer3(request, $scope.possiblePrices[arrayIndex], -1);
+
+
+
+
+
+				// await db.collection('offers').doc(`${request._mode}-${$scope.possiblePrices[arrayIndex]}-${arrayIndex}`).get().then(function(doc) {
+				// 		console.log('Fb ' + 1);
+				// 		console.log(doc.data());
+						
+				// 		if (doc.exists && doc.data() < request.amt) {
+				// 			arrayIndex++;
+				// 			if (arrayIndex < $scope.possiblePrices.length) $scope.getOffer2(arrayIndex++);	
+				// 		}
+				// 	})
+				// 	.catch(function(e) {
+				// 		console.log('Fb ' + 1);
+				// 		console.error(e);
+				// 	});
+
+				// console.log('Fb ' + 2);
 				
-				$scope.state.buyOffer = {
-					username: resOffer,
-					price: _price,
-					total: _total,
-					logo: $scope.modeLogos[request._mode <= 3 ? request._mode : request._mode - 4]
-				};
-				$scope.$apply();
+				// const _price = $scope.possiblePrices[arrayIndex] / 1000000;
+				// const _total = request.amt * _price;
+				
+				// $scope.state.buyOffer = {
+				// 	username: resOffer,
+				// 	price: _price,
+				// 	total: _total,
+				// 	logo: $scope.modeLogos[request._mode <= 3 ? request._mode : request._mode - 4]
+				// };
+				// $scope.$apply();
 
-				if (request._mode == 0) {
-					const upiUrl = `upi://pay?pa=${resOffer}&pn=X&am=${_total}`;
+				// if (request._mode == 0) {
+				// 	const upiUrl = `upi://pay?pa=${resOffer}&pn=X&am=${_total}`;
 
-					new QRCode(document.getElementById("qrcode"), {
-						text: upiUrl,
-						width: $('#payment-info').width() * 0.5,
-						height: $('#payment-info').width() * 0.5
-					});
-				}
+				// 	new QRCode(document.getElementById("qrcode"), {
+				// 		text: upiUrl,
+				// 		width: $('#payment-info').width() * 0.5,
+				// 		height: $('#payment-info').width() * 0.5
+				// 	});
+				// }
 			}
 		} catch (e) {
 			console.error(e);
